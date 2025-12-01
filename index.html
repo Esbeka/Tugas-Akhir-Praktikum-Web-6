@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard - Tugas Akhir</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Theme base */
+    body[data-theme="dark"] {
+      background-color: #020617; /* slate-950 */
+      color: #e5e7eb;            /* slate-200 */
+    }
+    body[data-theme="light"] {
+      background-color: #e5e7eb; /* slate-200 */
+      color: #0f172a;            /* slate-900 */
+    }
+
+    .card {
+      border-radius: 1.5rem;
+      transition: background-color .25s ease, color .25s ease, box-shadow .25s ease;
+    }
+    body[data-theme="dark"] .card {
+      background-color: #020617; /* slate-950 */
+      box-shadow: 0 24px 60px rgba(15,23,42,0.8);
+      color: #e5e7eb;
+    }
+    body[data-theme="light"] .card {
+      background-color: #ffffff;
+      box-shadow: 0 24px 60px rgba(15,23,42,0.15);
+      color: #0f172a;
+    }
+
+    /* Search + autocomplete follow theme */
+    body[data-theme="dark"] #search-input,
+    body[data-theme="dark"] #theme-toggle,
+    body[data-theme="dark"] #autocomplete-suggestions {
+      background-color: #0f172a; /* slate-900 */
+      color: #e5e7eb;
+    }
+    body[data-theme="light"] #search-input,
+    body[data-theme="light"] #theme-toggle,
+    body[data-theme="light"] #autocomplete-suggestions {
+      background-color: #e5e7eb; /* slate-200 */
+      color: #0f172a;
+    }
+
+    #autocomplete-suggestions div:hover {
+      background-color: rgba(59,130,246,0.15);
+    }
+  </style>
+</head>
+<body data-theme="dark" class="min-h-screen p-6 md:p-10">
+
+  <main class="max-w-6xl mx-auto card p-6 md:p-8">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-semibold">Weather Dashboard</h1>
+        <p id="header-subtitle" class="text-sm text-slate-400 mt-1">
+          Current weather, 5-day forecast & favorites
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Search -->
+        <div class="relative">
+          <input
+            id="search-input"
+            type="text"
+            placeholder="Search your location"
+            class="px-4 py-2.5 rounded-full w-64 text-sm outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400"
+          />
+          <div
+            id="autocomplete-suggestions"
+            class="absolute left-0 right-0 mt-2 rounded-xl shadow-lg text-sm hidden z-20 overflow-hidden"
+          ></div>
+        </div>
+
+        <!-- Theme toggle -->
+        <button
+          id="theme-toggle"
+          class="w-10 h-10 rounded-full flex items-center justify-center border border-slate-500/40 hover:scale-105 transition"
+          aria-label="Toggle theme"
+        >
+          <span id="theme-icon">🌙</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- LEFT: Current + highlight + favorites -->
+      <div class="md:col-span-2 flex flex-col gap-6">
+        <!-- Current weather -->
+        <section id="current-weather-card" class="card p-6 md:p-7">
+          <div class="flex items-start justify-between gap-4 mb-4">
+            <div>
+              <p id="city-name" class="text-xl md:text-2xl font-semibold">Loading...</p>
+              <p id="current-timestamp" class="text-xs md:text-sm text-slate-400 mt-1">
+                Loading time...
+              </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button
+                id="toggle-units"
+                class="px-3 py-1.5 rounded-full text-sm border border-slate-400/60 hover:bg-slate-500/10 transition"
+              >
+                °C
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div>
+              <p id="current-temp" class="text-6xl md:text-7xl font-light leading-none">--°C</p>
+              <p id="current-condition" class="mt-3 text-lg">Loading...</p>
+              <p class="text-sm text-slate-400 mt-1">
+                Feels like <span id="feels-like-temp">--°</span>
+              </p>
+            </div>
+
+            <div class="flex flex-col items-center gap-2">
+              <img
+                id="current-icon"
+                src=""
+                alt="Weather icon"
+                class="w-24 h-24 object-contain opacity-0 transition-opacity"
+              />
+              <p class="text-xs text-slate-400" id="last-updated">
+                Last updated: --
+              </p>
+            </div>
+          </div>
+
+          <!-- Loading overlay -->
+          <div id="current-loading" class="mt-4 text-sm text-slate-400 hidden">
+            <span class="inline-block w-4 h-4 border-[3px] border-current border-t-transparent rounded-full animate-spin mr-2"></span>
+            Updating weather...
+          </div>
+
+          <!-- Extra info -->
+          <div class="grid grid-cols-3 gap-4 mt-6 text-sm">
+            <div>
+              <p class="text-slate-400">Humidity</p>
+              <p id="humidity-value" class="text-lg font-semibold mt-1">--%</p>
+            </div>
+            <div>
+              <p class="text-slate-400">Wind Speed</p>
+              <p class="text-lg font-semibold mt-1">
+                <span id="wind-speed">--</span> <span id="wind-unit">km/h</span>
+              </p>
+            </div>
+            <div>
+              <p class="text-slate-400">Location Timezone</p>
+              <p id="timezone-label" class="text-lg font-semibold mt-1">--</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Favorites -->
+        <section>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Favorite Cities</h2>
+            <button
+              id="save-favorite-btn"
+              class="text-xs md:text-sm px-3 py-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-500 transition"
+            >
+              ⭐ Save Current City
+            </button>
+          </div>
+          <div
+            id="favorites-container"
+            class="flex flex-wrap gap-2 text-sm"
+          >
+            <!-- Filled by JS -->
+          </div>
+        </section>
+
+        <!-- Today Highlights -->
+        <section>
+          <h2 class="text-lg font-semibold mb-3">Today's Highlights</h2>
+
+          <div
+            id="highlight-loading"
+            class="text-sm text-slate-400 mb-3 hidden"
+          >
+            <span class="inline-block w-4 h-4 border-[3px] border-current border-t-transparent rounded-full animate-spin mr-2"></span>
+            Loading highlights...
+          </div>
+
+          <div id="highlights-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="card p-4">
+              <p class="text-slate-400 text-sm mb-1">💨 Wind Status</p>
+              <p class="text-2xl font-semibold">
+                <span id="highlight-wind">--</span>
+                <span class="text-base font-normal" id="highlight-wind-unit">km/h</span>
+              </p>
+              <p class="text-xs text-slate-400 mt-1">Real-time data</p>
+            </div>
+
+            <div class="card p-4">
+              <p class="text-slate-400 text-sm mb-1">💧 Humidity</p>
+              <p class="text-2xl font-semibold">
+                <span id="highlight-humidity">--</span>%
+              </p>
+              <p id="humidity-comment" class="text-xs text-slate-400 mt-1">
+                --
+              </p>
+            </div>
+
+            <div class="card p-4 flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-sm mb-1">☀️ Sunrise</p>
+                <p id="sunrise-time" class="text-2xl font-semibold">--:--</p>
+              </div>
+            </div>
+
+            <div class="card p-4 flex items-center justify-between">
+              <div>
+                <p class="text-slate-400 text-sm mb-1">🌇 Sunset</p>
+                <p id="sunset-time" class="text-2xl font-semibold">--:--</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT: 5-Day Forecast -->
+      <section class="md:col-span-1">
+        <h2 class="text-lg font-semibold mb-3">5-Day Forecast</h2>
+
+        <div id="forecast-loading" class="text-sm text-slate-400 mb-3">
+          <span class="inline-block w-4 h-4 border-[3px] border-current border-t-transparent rounded-full animate-spin mr-2"></span>
+          Loading forecast...
+        </div>
+
+        <div id="forecast-container" class="flex flex-col gap-3">
+          <!-- Filled by JS -->
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <!-- Refresh floating button -->
+  <button
+    id="refresh-btn"
+    class="fixed bottom-6 right-6 rounded-full bg-blue-600 text-white w-12 h-12 flex items-center justify-center shadow-lg hover:bg-blue-500 transition"
+    aria-label="Refresh weather"
+  >
+    <span id="refresh-icon" class="block">
+      ⟳
+    </span>
+    <span
+      id="refresh-spinner"
+      class="hidden inline-block w-5 h-5 border-[3px] border-white border-t-transparent rounded-full animate-spin"
+    ></span>
+  </button>
+
+  <script src="app.js"></script>
+</body>
+</html>
